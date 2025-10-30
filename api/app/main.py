@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from routers.user_router import user_router
 from routers.portfolio_router import portfolio_router
 from routers.trade_router import trade_router
+from routers.ticker_router import ticker_router
 from database import BaseSQL, engine
 
 @asynccontextmanager
@@ -23,3 +24,4 @@ app = FastAPI(
 app.include_router(user_router)
 app.include_router(portfolio_router)
 app.include_router(trade_router)
+app.include_router(ticker_router)
