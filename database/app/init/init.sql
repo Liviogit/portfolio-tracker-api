@@ -4,8 +4,8 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
-    prenom TEXT,
-    nom TEXT
+    first_name TEXT,
+    last_name TEXT
 );
 
 CREATE TABLE portfolios (
@@ -29,7 +29,7 @@ CREATE TABLE trades (
 
 
 -- Users
-COPY users(user_id,prenom, nom)
+COPY users(user_id,first_name, last_name)
 FROM '/docker-entrypoint-initdb.d/data/users.csv'
 DELIMITER ','
 CSV HEADER;

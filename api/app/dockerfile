@@ -1,8 +1,16 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11
 
-COPY requirements.txt .
-
-RUN pip install -r requirements.txt
 WORKDIR /app
 
-COPY main.py /app/.
+# Copier requirements et installer
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Définir le PYTHONPATH pour les imports
+ENV PYTHONPATH=/app
+
+# Copier tout le code de l'API
+COPY . .
+
+# Commande par défaut pour lancer l'API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5001", "--reload"]
