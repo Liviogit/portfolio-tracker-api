@@ -1,6 +1,8 @@
-DROP TABLE IF EXISTS trades, portfolios, "user";
+DROP TABLE IF EXISTS trades;
+DROP TABLE IF EXISTS portfolios;
+DROP TABLE IF EXISTS users;
 
-CREATE TABLE "users" (
+CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     prenom TEXT,
     nom TEXT
@@ -8,7 +10,7 @@ CREATE TABLE "users" (
 
 CREATE TABLE portfolios (
     portfolio_id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES "users"(user_id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     last_amount NUMERIC(12, 2) NOT NULL,
     initial_amount NUMERIC(12, 2) NOT NULL,
     positions TEXT,
@@ -27,7 +29,7 @@ CREATE TABLE trades (
 
 
 -- Users
-COPY "users"(user_id,prenom, nom)
+COPY users(user_id,prenom, nom)
 FROM '/docker-entrypoint-initdb.d/data/users.csv'
 DELIMITER ','
 CSV HEADER;
