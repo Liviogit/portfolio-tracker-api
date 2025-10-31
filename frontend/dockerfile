@@ -1,0 +1,20 @@
+# Image de base officielle Python
+FROM python:3.11-slim
+
+# Définir le répertoire de travail dans le conteneur
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY requirements.txt .
+
+# Installer les dépendances
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copier le reste du code
+COPY . .
+
+# Exposer le port Flask
+EXPOSE 8050
+
+# Lancer le serveur Flask
+CMD ["python", "app.py"]

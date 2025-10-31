@@ -28,6 +28,15 @@ services:
     networks:
       - default
   
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8050:8050"
+    depends_on:
+      - api
+    networks:
+      - default
 networks:
   default:
     driver: bridge
