@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from models.user_model import User
+from services.auth_service import get_current_user
 from database import get_db
 from services.portfolio_service import (
-    create_portfolio, get_portfolios, get_portfolio, update_portfolio, delete_portfolio, get_portfolios_by_user
+    create_portfolio, get_portfolios_by_user, update_portfolio, delete_portfolio
 )
 from serializers.portfolio_serializer import PortfolioCreate, PortfolioRead
 
@@ -16,21 +18,14 @@ def create_portfolio_endpoint(portfolio: PortfolioCreate, db: Session = Depends(
 
 
 @portfolio_router.get("/", response_model=list[PortfolioRead])
-def read_portfolios(db: Session = Depends(get_db)):
-    return get_portfolios(db)
-
-
-@portfolio_router.get("/user/{user_id}", response_model=list[PortfolioRead])
-def read_portfolios_by_user(user_id: int, db: Session = Depends(get_db)):
-    return get_portfolios_by_user(db, user_id)
-
-
-@portfolio_router.get("/{portfolio_id}", response_model=PortfolioRead)
-def read_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
-    portfolio = get_portfolio(db, portfolio_id)
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    return portfolio
+def get_my_portfolios(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retourne uniquement les portefeuilles de l'utilisateur connecté.
+    """
+    return get_portfolios_by_user(db, current_user.user_id)
 
 
 @portfolio_router.put("/{portfolio_id}", response_model=PortfolioRead)

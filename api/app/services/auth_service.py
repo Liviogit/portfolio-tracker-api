@@ -1,11 +1,14 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from datetime import datetime
 from services.security import SECRET_KEY, ALGORITHM, verify_password
 from services.user_service import get_user_by_username
 from models.user_model import User
+from database import get_db
+from fastapi.security import OAuth2PasswordBearer
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 def authenticate_user(db: Session, username: str, password: str) -> User | None:
     """
@@ -17,16 +20,20 @@ def authenticate_user(db: Session, username: str, password: str) -> User | None:
     return user
 
 
-def get_current_user(token: str, db: Session) -> User:
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> User:
     """
     Récupère l'utilisateur courant à partir du token JWT.
+    Protège les routes nécessitant une authentification.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")

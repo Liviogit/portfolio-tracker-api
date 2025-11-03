@@ -16,18 +16,8 @@ def create_portfolio(db: Session, portfolio: PortfolioCreate):
     db.refresh(db_portfolio)
     return db_portfolio
 
-
-def get_portfolios(db: Session):
-    return db.query(Portfolio).all()
-
-
 def get_portfolios_by_user(db: Session, user_id: int):
     return db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
-
-
-def get_portfolio(db: Session, portfolio_id: int):
-    return db.query(Portfolio).filter(Portfolio.portfolio_id == portfolio_id).first()
-
 
 def update_portfolio(db: Session, portfolio_id: int, portfolio_update: PortfolioCreate):
     portfolio = db.query(Portfolio).filter(Portfolio.portfolio_id == portfolio_id).first()

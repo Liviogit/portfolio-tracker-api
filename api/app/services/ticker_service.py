@@ -1,6 +1,17 @@
 from fastapi import HTTPException
 import yfinance as yf
+import math
 
+def clean_json_values(data):
+    if isinstance(data, dict):
+        return {k: clean_json_values(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [clean_json_values(v) for v in data]
+    elif isinstance(data, float):
+        if math.isnan(data) or math.isinf(data):
+            return None
+        return data
+    return data
 def get_tickers_data(
     ticker: str,
     period: str = "5d",
@@ -28,7 +39,7 @@ def get_tickers_data(
                 if t in data.columns.levels[0]:
                     df_t = data[t].reset_index()
                     data_dict[t] = df_t.to_dict(orient="records")
-
+            data_dict = clean_json_values(data_dict)
             return data_dict
 
         # Cas d’un seul ticker
@@ -39,7 +50,7 @@ def get_tickers_data(
 
             if hist.empty:
                 raise HTTPException(status_code=404, detail=f"Aucune donnée trouvée pour {ticker}")
-
+            hist = clean_json_values(hist)
             return {ticker: hist.reset_index().to_dict(orient="records")}
 
     except Exception as e:
