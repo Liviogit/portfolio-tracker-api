@@ -7,6 +7,7 @@ from routers.trade_router import trade_router
 from routers.ticker_router import ticker_router
 from routers.auth_router import auth_router
 from database import BaseSQL, engine
+import event
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,7 +21,6 @@ app = FastAPI(
     version="0.0.1",
     lifespan=lifespan,
 )
-
 # Inclusion des routers
 app.include_router(user_router)
 app.include_router(portfolio_router)
