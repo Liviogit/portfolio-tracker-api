@@ -47,3 +47,5 @@ COPY trades(trade_id,portfolio_id, asset_name, action, price, quantity, trade_da
 FROM '/docker-entrypoint-initdb.d/data/trades.csv'
 DELIMITER ','
 CSV HEADER;
+
+SELECT setval('users_user_id_seq', (SELECT MAX(user_id)+1 FROM users));
