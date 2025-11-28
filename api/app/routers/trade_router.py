@@ -29,19 +29,3 @@ def read_trades_by_portfolio(portfolio_id: int,db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
 
     return get_trades_by_portfolio(db,current_user.user_id, portfolio_id)
-
-
-@trade_router.put("/{trade_id}", response_model=TradeRead)
-def update_trade_endpoint(trade_id: int, trade_update: TradeCreate, db: Session = Depends(get_db)):
-    trade = update_trade(db, trade_id, trade_update)
-    if not trade:
-        raise HTTPException(status_code=404, detail="Trade not found")
-    return trade
-
-
-@trade_router.delete("/{trade_id}", response_model=TradeRead)
-def delete_trade_endpoint(trade_id: int, db: Session = Depends(get_db)):
-    trade = delete_trade(db, trade_id)
-    if not trade:
-        raise HTTPException(status_code=404, detail="Trade not found")
-    return trade

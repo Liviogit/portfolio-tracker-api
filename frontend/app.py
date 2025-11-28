@@ -2,7 +2,6 @@ import dash
 from dash import dcc, html, Input, Output, callback, State
 from pages.home import create_home
 from pages.portfolio import create_portfolio
-from pages.trades import create_trades
 from pages.bourse import create_bourse
 from pages.login import create_login_page
 from pages.register import create_register_page
@@ -39,7 +38,6 @@ app.layout = html.Div([
     html.Nav([
         dcc.Link('Accueil', href='/', style={'color': '#fff', 'textDecoration': 'none'}),
         dcc.Link('Portefeuille', href='/portfolio', style={'color': '#fff', 'textDecoration': 'none'}),
-        dcc.Link('Trades', href='/trades', style={'color': '#fff', 'textDecoration': 'none'}),
         dcc.Link('Bourse', href='/bourse', style={'color': '#fff', 'textDecoration': 'none'}),
     ], style={
         'display': 'flex',
@@ -63,8 +61,6 @@ def display_page(pathname):
         return create_home()
     elif pathname == '/portfolio':
         return create_portfolio()
-    elif pathname == '/trades':
-        return create_trades()
     elif pathname == '/bourse':
         return create_bourse()
     elif pathname == '/login':

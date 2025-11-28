@@ -1,7 +1,38 @@
 from dash import html, dcc, Input, Output, State, callback
+import requests
+def create_trades(user_data, portfolio_id):
+    api_url = f"http://api:5001/trades/portfolio/{portfolio_id}"  # ton endpoint
+    token = user_data["access_token"]
+    token_type = user_data.get("token_type", "bearer")
+    headers = {
+        "Authorization": f"{token_type.capitalize()} {token}"
+    }
+    try:
+        response = requests.get(api_url, headers=headers, timeout=5)
 
-def create_trades():
-    return html.Div([
+        if response.status_code == 200:
+            data = response.json()   # liste de trades
+
+            trades = data  # pas data[0], ta réponse est déjà une liste
+
+            if not trades:
+                trade_items = [html.Div("Aucun trade pour ce portefeuille.")]
+            else:
+                trade_items = [
+                    html.Li(
+                        f"{trade['action']} {trade['quantity']}x {trade['asset_name']} "
+                        f"à {trade['price']}€ le {trade['trade_date']}"
+                    )
+                    for trade in trades
+                ]
+
+
+        else:
+            return html.Div(f"Erreur API : {response.status_code} - {response.text} {api_url}")
+
+    except requests.exceptions.RequestException:
+        return html.Div("Impossible de contacter l'API.")
+    return html.Div(trade_items+[
         html.H2("Ajouter un trade", style={'textAlign': 'center'}),
         html.Div([
             dcc.Input(id='trade-ticker', type='text', placeholder='Ticker', style={'margin': '5px'}),

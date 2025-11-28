@@ -4,8 +4,9 @@ import requests
 import dash_bootstrap_components as dbc
 import json
 import yfinance as yf
-
-
+import pandas as pd
+import plotly.graph_objs as go
+from pages.trades import create_trades
 def ticker_exists(ticker: str) -> bool:
     try:
         data = yf.Ticker(ticker).history(period="1d")
@@ -41,6 +42,50 @@ def create_portfolio():
             create_empty_output(),
         ]
     )
+
+def create_portfolio_output(data,portfolio_id,user_data):
+    API_URL="http://api:5001/tickers"
+    last_amount = data.get("last_amount", "N/A")
+    initial_amount = data.get("initial_amount", "N/A")
+    tickers = data.get("positions", "").upper()
+    tickers_list = tickers.split(",")
+    positions_size = data.get("positions_size","").split(",")
+    portfolio_dict=dict(zip(tickers_list, positions_size))
+    response=requests.get(f"{API_URL}/{tickers.strip().upper()}")
+    response=response.json()
+    dates=[line['Date'] for line in response[next(iter(response))]]
+    prices=[]
+    for ticker, rows in response.items():
+        df = pd.DataFrame(rows)
+        dates=df['Date'].to_list()
+        df=df['Close']
+        df=df*int(portfolio_dict[ticker])
+        prices=prices+df.tolist()
+
+    fig = go.Figure(data=[
+            go.Scatter(x=dates, y=prices, mode='lines+markers', name="Evolution du portefeuille")
+        ])
+    fig.update_layout(
+        title=f"Évolution du portefeuille",
+        xaxis_title="Date",
+        yaxis_title="Prix (€)",
+        paper_bgcolor='#303030',
+        plot_bgcolor='#303030',
+        font=dict(color='white')
+    )
+
+    trades_layout=create_trades(user_data,portfolio_id)
+    res=html.Div([
+        html.H3(f"Détails du portefeuille {portfolio_id}"),
+        html.P(f"Montant initial : {initial_amount} €"),
+        html.P(f"Montant actuel : {last_amount} €"),
+        html.H4("Positions :"),
+        html.Ul([html.Li(f"{ticker} : {size} actions") for ticker, size in portfolio_dict.items()]),
+        dcc.Graph(figure=fig),
+        html.H4("Trades associés :"),
+        trades_layout
+    ])
+    return res
 
 @callback(
     Output("portfolio-list-container", "children"),
@@ -95,7 +140,8 @@ def load_portfolios(pathname, user_data):
 # Callback pour gérer le clic sur un bouton
 
 @callback(
-    Output("portfolio-output", "children",allow_duplicate=True),
+    [Output("portfolio-output", "children",allow_duplicate=True),
+     Output("portfolio-data", "data", allow_duplicate=True)],
     Input({"type": "portfolio-btn", "index": ALL}, "n_clicks_timestamp"),
     State({"type": "portfolio-btn", "index": ALL}, "id"),
     State("user-data", "data"),
@@ -104,7 +150,7 @@ def load_portfolios(pathname, user_data):
 def show_portfolio_by_ts(n_clicks_ts_list, portfolio_ids,user_data):
     # aucun clic (toutes valeurs None)
     if not n_clicks_ts_list or all(v is None for v in n_clicks_ts_list):
-        return html.Div("Sélectionnez un portefeuille dans la barre de gauche.")
+        return [html.Div("Sélectionnez un portefeuille dans la barre de gauche."),no_update]
 
     # remplacer None par 0 (plus petit timestamp)
     safe_ts = [0 if v is None else v for v in n_clicks_ts_list]
@@ -114,7 +160,7 @@ def show_portfolio_by_ts(n_clicks_ts_list, portfolio_ids,user_data):
     idx = safe_ts.index(last_ts)
     clicked_portfolio_id = portfolio_ids[idx]["index"]
     if not user_data or "access_token" not in user_data:
-        return "⛔ Pas de token – vous devez être connecté." + str(user_data)
+        return [html.Div("⛔ Pas de token – vous devez être connecté." + str(user_data)), no_update]
     
     # --- Requête API dynamique ---
 
@@ -129,28 +175,20 @@ def show_portfolio_by_ts(n_clicks_ts_list, portfolio_ids,user_data):
         if response.status_code == 200:
             data = response.json()
         else:
-            return html.Div(f"Erreur API : {response.status_code} - {response.text} {api_url}")
+            return [html.Div(f"Erreur API : {response.status_code} - {response.text} {api_url}"), no_update]
     except requests.exceptions.RequestException:
-        return html.Div("Impossible de contacter l'API.")
+        return [html.Div("Impossible de contacter l'API."), no_update]
 
     # Construction du tableau HTML
     if not data:
-        return html.Div("Aucune donnée pour ce portefeuille.")
-
-    table = html.Table([
-        html.Thead(html.Tr([html.Th(k) for k in data[0].keys()])),
-        html.Tbody([html.Tr([html.Td(v) for v in row.values()]) for row in data])
-    ], style={'margin': 'auto', 'borderCollapse': 'collapse', 'border': '1px solid #ccc'})
-
-    return html.Div([
-        html.H2("portfolio "+str(clicked_portfolio_id), style={"textAlign": "center"}),
-        table
-    ])
+        return [html.Div("Aucune donnée pour ce portefeuille."), no_update]
+    bloc_portfolio=create_portfolio_output(data[0],clicked_portfolio_id,user_data)
+    return [bloc_portfolio,clicked_portfolio_id]
 
 @callback(
     Output("portfolio-output", "children", allow_duplicate=True),
-    State("user-data", "data"),
     Input("create-portfolio-btn", "n_clicks_timestamp"),  # timestamp au lieu de n_clicks
+    State("user-data", "data"),
     prevent_initial_call=True
 )
 def show_portfolio_creator(timestamp, user_data):
