@@ -8,7 +8,7 @@ class PortfolioBase(BaseModel):
     positions_size: str      # Exemple : "50,30,20"
 
 class PortfolioCreate(PortfolioBase):
-    user_id: int
+    pass
 
 class PortfolioRead(PortfolioBase):
     portfolio_id: int

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, ForeignKey
+from sqlalchemy import Column, String, Float, ForeignKey, Integer
 import uuid
 
 from database import BaseSQL
@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 class Portfolio(BaseSQL):
     __tablename__ = "portfolios"
 
-    portfolio_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+    portfolio_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
 
     last_amount = Column(Float, nullable=False)

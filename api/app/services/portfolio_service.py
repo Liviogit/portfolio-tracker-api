@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 from models.portfolio_model import Portfolio
+from models.user_model import User
 from serializers.portfolio_serializer import PortfolioCreate
 
 
-def create_portfolio(db: Session, portfolio: PortfolioCreate):
+def create_portfolio(db: Session, portfolio: PortfolioCreate, current_user: User):
     db_portfolio = Portfolio(
-        user_id=portfolio.user_id,
+        user_id=current_user.user_id,          # <-- sécurisé
         last_amount=portfolio.last_amount,
         initial_amount=portfolio.initial_amount,
         positions=portfolio.positions,
@@ -16,8 +17,15 @@ def create_portfolio(db: Session, portfolio: PortfolioCreate):
     db.refresh(db_portfolio)
     return db_portfolio
 
+
 def get_portfolios_by_user(db: Session, user_id: int):
     return db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+
+def get_portfolios_by_user(db: Session, user_id: int, portfolio_id: int = None):
+    query = db.query(Portfolio).filter(Portfolio.user_id == user_id)
+    if portfolio_id is not None:
+        query = query.filter(Portfolio.portfolio_id == portfolio_id)
+    return query.all()
 
 def update_portfolio(db: Session, portfolio_id: int, portfolio_update: PortfolioCreate):
     portfolio = db.query(Portfolio).filter(Portfolio.portfolio_id == portfolio_id).first()

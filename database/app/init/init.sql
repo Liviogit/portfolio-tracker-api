@@ -49,3 +49,5 @@ DELIMITER ','
 CSV HEADER;
 
 SELECT setval('users_user_id_seq', (SELECT MAX(user_id)+1 FROM users));
+SELECT setval('portfolios_portfolio_id_seq', (SELECT MAX(portfolio_id)+1 FROM portfolios));
+SELECT setval('trades_trade_id_seq', (SELECT MAX(trade_id)+1 FROM trades));

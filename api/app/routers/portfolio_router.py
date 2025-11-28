@@ -13,9 +13,12 @@ portfolio_router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
 
 @portfolio_router.post("/", response_model=PortfolioRead)
-def create_portfolio_endpoint(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
-    return create_portfolio(db, portfolio)
-
+def create_portfolio_endpoint(
+    portfolio: PortfolioCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # récupère l'utilisateur connecté
+):
+    return create_portfolio(db, portfolio, current_user)
 
 @portfolio_router.get("/", response_model=list[PortfolioRead])
 def get_my_portfolios(
@@ -27,6 +30,16 @@ def get_my_portfolios(
     """
     return get_portfolios_by_user(db, current_user.user_id)
 
+@portfolio_router.get("/{portfolio_id}", response_model=list[PortfolioRead])
+def get_my_portfolios_id(portfolio_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    
+):
+    """
+    Retourne uniquement les portefeuilles de l'utilisateur connecté.
+    """
+    return get_portfolios_by_user(db, current_user.user_id, portfolio_id=portfolio_id)
 
 @portfolio_router.put("/{portfolio_id}", response_model=PortfolioRead)
 def update_portfolio_endpoint(portfolio_id: int, portfolio_update: PortfolioCreate, db: Session = Depends(get_db)):
