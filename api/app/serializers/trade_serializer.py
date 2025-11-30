@@ -7,6 +7,7 @@ class TradeBase(BaseModel):
     price: float
     quantity: int
     trade_date: datetime
+    description: Optional[str] = None
 
 class TradeCreate(BaseModel):
     portfolio_id: int
@@ -15,6 +16,7 @@ class TradeCreate(BaseModel):
     price: float
     quantity: int
     trade_date: Optional[datetime] = None 
+    description: Optional[str] = None
 
 class TradeRead(TradeBase):
     trade_id: int

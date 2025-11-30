@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
-
+import datetime
 class PortfolioBase(BaseModel):
     last_amount: float
     initial_amount: float
     positions: str           # Exemple : "AAPL,GOOGL,TSLA"
     positions_size: str      # Exemple : "50,30,20"
-
+    portfolio_name: str
+    portfolio_date: Optional[datetime.datetime] = None
 class PortfolioCreate(PortfolioBase):
     pass
 

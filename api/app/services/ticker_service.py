@@ -15,21 +15,31 @@ def clean_json_values(data):
 def get_tickers_data(
     ticker: str,
     period: str = "5d",
-    interval: str = "1d"
+    interval: str = "1d",
+    start: str | None = None,
 ):
     try:
         # Vérifie si plusieurs tickers ont été passés
         if ',' in ticker:
             tickers = [t.strip().upper() for t in ticker.split(',')]
-            data = yf.download(
-                tickers=" ".join(tickers),
-                period=period,
-                interval=interval,
-                group_by="ticker",
-                auto_adjust=True,
-                threads=True
-            )
-
+            if start:
+                data = yf.download(
+                    tickers=" ".join(tickers),
+                    start=start,
+                    interval=interval,
+                    group_by="ticker",
+                    auto_adjust=True,
+                    threads=True
+                )
+            else:
+                data = yf.download(
+                    tickers=" ".join(tickers),
+                    period=period,
+                    interval=interval,
+                    group_by="ticker",
+                    auto_adjust=True,
+                    threads=True
+                )
             if data.empty:
                 raise HTTPException(status_code=404, detail="Aucune donnée trouvée pour les tickers fournis")
 
@@ -46,7 +56,10 @@ def get_tickers_data(
         else:
             ticker = ticker.strip().upper()
             t = yf.Ticker(ticker)
-            hist = t.history(period=period, interval=interval, auto_adjust=True)
+            if start:
+                hist = t.history(interval=interval, start=start, auto_adjust=True)
+            else:
+                hist = t.history(period=period, interval=interval, auto_adjust=True)
 
             if hist.empty:
                 raise HTTPException(status_code=404, detail=f"Aucune donnée trouvée pour {ticker}")

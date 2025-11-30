@@ -16,7 +16,9 @@ CREATE TABLE portfolios (
     last_amount NUMERIC(12, 2) NOT NULL,
     initial_amount NUMERIC(12, 2) NOT NULL,
     positions TEXT,
-    positions_size TEXT
+    positions_size TEXT,
+    portfolio_name TEXT,
+    portfolio_date  TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE trades (
@@ -26,7 +28,8 @@ CREATE TABLE trades (
     action VARCHAR(4) NOT NULL CHECK (action IN ('BUY', 'SELL')),
     price NUMERIC(12, 2) NOT NULL,
     quantity NUMERIC(12, 2) NOT NULL,
-    trade_date TIMESTAMP DEFAULT NOW()
+    trade_date TIMESTAMP DEFAULT NOW(),
+    description TEXT
 );
 
 
@@ -37,13 +40,13 @@ DELIMITER ','
 CSV HEADER;
 
 -- Portfolios
-COPY portfolios(portfolio_id,user_id, last_amount, initial_amount, positions, positions_size)
+COPY portfolios(portfolio_id,user_id, last_amount, initial_amount, positions, positions_size, portfolio_name, portfolio_date)
 FROM '/docker-entrypoint-initdb.d/data/portfolios.csv'
 DELIMITER ','
 CSV HEADER;
 
 -- Trades
-COPY trades(trade_id,portfolio_id, asset_name, action, price, quantity, trade_date)
+COPY trades(trade_id,portfolio_id, asset_name, action, price, quantity, trade_date, description)
 FROM '/docker-entrypoint-initdb.d/data/trades.csv'
 DELIMITER ','
 CSV HEADER;

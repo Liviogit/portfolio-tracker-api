@@ -16,5 +16,6 @@ class Trade(BaseSQL):
     price = Column(Float, nullable=False)
     quantity = Column(Integer, nullable=False)
     trade_date = Column(DateTime, default=datetime.utcnow)
+    description = Column(String)  # Optional description of the trade
 
     portfolio = relationship("Portfolio", back_populates="trades")
