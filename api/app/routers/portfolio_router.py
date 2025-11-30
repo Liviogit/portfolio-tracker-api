@@ -7,7 +7,7 @@ from database import get_db
 from services.portfolio_service import (
     create_portfolio, get_portfolios_by_user, update_portfolio, delete_portfolio
 )
-from serializers.portfolio_serializer import PortfolioCreate, PortfolioRead
+from serializers.portfolio_serializer import PortfolioCreate, PortfolioRead, PortfolioUpdate
 
 portfolio_router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
@@ -42,16 +42,16 @@ def get_my_portfolios_id(portfolio_id: int,
     return get_portfolios_by_user(db, current_user.user_id, portfolio_id=portfolio_id)
 
 @portfolio_router.put("/{portfolio_id}", response_model=PortfolioRead)
-def update_portfolio_endpoint(portfolio_id: int, portfolio_update: PortfolioCreate, db: Session = Depends(get_db)):
-    portfolio = update_portfolio(db, portfolio_id, portfolio_update)
+def update_portfolio_endpoint(portfolio_id: int, portfolio_update: PortfolioUpdate, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+    portfolio = update_portfolio(db, portfolio_id, portfolio_update, current_user.user_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio
 
 
 @portfolio_router.delete("/{portfolio_id}", response_model=PortfolioRead)
-def delete_portfolio_endpoint(portfolio_id: int, db: Session = Depends(get_db)):
-    portfolio = delete_portfolio(db, portfolio_id)
+def delete_portfolio_endpoint(portfolio_id: int, db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+    portfolio = delete_portfolio(db, portfolio_id,current_user.user_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio

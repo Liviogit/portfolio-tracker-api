@@ -16,3 +16,9 @@ class PortfolioRead(PortfolioBase):
 
     class Config:
         orm_mode = True
+
+class PortfolioUpdate(BaseModel):
+    last_amount: float | None = None
+    initial_amount: float | None = None
+    positions: list[str] | None = None
+    positions_size: list[int] | None = None

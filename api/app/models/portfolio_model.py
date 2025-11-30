@@ -17,4 +17,4 @@ class Portfolio(BaseSQL):
     positions_size = Column(String)     # ex: "50,30,20"
 
     user = relationship("User", back_populates="portfolios")
-    trades = relationship("Trade", back_populates="portfolio")
+    trades = relationship("Trade", back_populates="portfolio",cascade="all, delete-orphan")

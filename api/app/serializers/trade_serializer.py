@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-
+from typing import Optional
 class TradeBase(BaseModel):
     asset_name: str
     action: str
@@ -8,8 +8,13 @@ class TradeBase(BaseModel):
     quantity: int
     trade_date: datetime
 
-class TradeCreate(TradeBase):
+class TradeCreate(BaseModel):
     portfolio_id: int
+    asset_name: str
+    action: str
+    price: float
+    quantity: int
+    trade_date: Optional[datetime] = None 
 
 class TradeRead(TradeBase):
     trade_id: int

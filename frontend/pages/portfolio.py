@@ -73,17 +73,43 @@ def create_portfolio_output(data,portfolio_id,user_data):
         plot_bgcolor='#303030',
         font=dict(color='white')
     )
-
+    if prices:
+        last_amount=prices[-1]
+        API_URL_portfolios=f"http://api:5001/portfolios/{portfolio_id}"
+        token = user_data["access_token"]
+        token_type = user_data.get("token_type", "bearer")
+        headers = {
+            "Authorization": f"{token_type.capitalize()} {token}"
+        }
+        playload = {
+            "last_amount": last_amount
+        }
+        try:
+            response = requests.put(API_URL_portfolios, headers=headers, json=playload, timeout=5)
+        except requests.exceptions.RequestException:
+            pass
+    last_amount=round(last_amount,2)
+    evolution= (last_amount - initial_amount) / initial_amount * 100 if initial_amount !=0 else 0
+    evolution_layout=html.P(f"Évolution : {round(evolution,1):.2f} %", style={'color': 'green' if evolution >=0 else 'red'})
     trades_layout=create_trades(user_data,portfolio_id)
-    res=html.Div([
-        html.H3(f"Détails du portefeuille {portfolio_id}"),
-        html.P(f"Montant initial : {initial_amount} €"),
-        html.P(f"Montant actuel : {last_amount} €"),
-        html.H4("Positions :"),
-        html.Ul([html.Li(f"{ticker} : {size} actions") for ticker, size in portfolio_dict.items()]),
-        dcc.Graph(figure=fig),
-        html.H4("Trades associés :"),
-        trades_layout
+    res=html.Div([html.Div([
+                    html.H3(f"Détails du portefeuille {portfolio_id}"),
+                    html.Button(
+                        "supprimer le portefeuille",
+                        id="delete-portfolio-btn",
+                        n_clicks=0,
+                        className="btn btn-danger mb-3",
+                        style={"float": "right", "color": "red"}
+                    )
+                ]),
+            html.P(f"Montant initial : {initial_amount} €"),
+            html.P(f"Montant actuel : {last_amount} €"),
+            evolution_layout,
+            html.H4("Positions :"),
+            html.Ul([html.Li(f"{ticker} : {size} actions") for ticker, size in portfolio_dict.items()]),
+            dcc.Graph(figure=fig),
+            html.H4("Trades associés :"),
+            trades_layout
     ])
     return res
 
@@ -281,3 +307,29 @@ def submit_portfolio(n_clicks, initial_amount, tickers, sizes, user_data):
         return f"Erreur API : {res.text} \n {tickers} {sizes}"
 
     return "Portefeuille créé avec succès !"
+
+@callback(
+    Output("portfolio-output", "children", allow_duplicate=True),
+    Input("delete-portfolio-btn", "n_clicks"),
+    State("portfolio-data", "data"),
+    State("user-data", "data"),
+    prevent_initial_call=True
+)
+def delete_portfolio(n_clicks, portfolio_id, user_data):
+    if not n_clicks or portfolio_id is None:
+        return no_update
+
+    # appel API
+    token = user_data["access_token"]
+    token_type = user_data.get("token_type", "bearer")
+
+    headers = {"Authorization": f"{token_type.capitalize()} {token}"}
+
+    import requests
+
+    res = requests.delete(f"http://api:5001/portfolios/{portfolio_id}",headers=headers)
+
+    if res.status_code != 200:
+        return f"Erreur API : {res.text}"
+
+    return "Portefeuille supprimé avec succès !"
