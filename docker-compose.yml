@@ -23,6 +23,7 @@ services:
       POSTGRES_DB: master_db
     volumes:
       - ./database/app/init:/docker-entrypoint-initdb.d
+      - postgres_data_webapp:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     networks:
@@ -37,6 +38,10 @@ services:
       - api
     networks:
       - default
+
+volumes:
+  postgres_data_webapp:
+  
 networks:
   default:
     driver: bridge
