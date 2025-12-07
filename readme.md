@@ -211,3 +211,5 @@ Ce projet est sous licence MIT.
 ---
 
 **Développé avec ❤️ pour simplifier la gestion de vos investissements**
+
+L'IA a été utilisé pour optimisé des fonctions de l'API et pour développer le frontend
