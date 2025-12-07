@@ -7,6 +7,9 @@ import yfinance as yf
 import pandas as pd
 import plotly.graph_objs as go
 from pages.trades import create_trades
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 def ticker_exists(ticker: str) -> bool:
     try:
         data = yf.Ticker(ticker).history(period="1d")
@@ -47,7 +50,8 @@ def create_portfolio_output(data,portfolio_id,user_data):
     API_URL="http://api:5001/tickers"
     last_amount = data.get("last_amount", "N/A")
     initial_amount = data.get("initial_amount", "N/A")
-    tickers = data.get("positions", "").upper()
+    cash= data.get("cash_balance", 0)
+    tickers = data.get("positions", "").lower()
     tickers_list = tickers.split(",")
     positions_size = data.get("positions_size","").split(",")
     portfolio_dict=dict(zip(tickers_list, positions_size))
@@ -56,14 +60,15 @@ def create_portfolio_output(data,portfolio_id,user_data):
     dates=[line['Date'] for line in response[next(iter(response))]]
     prices=[]
     for ticker, rows in response.items():
+        ticker=ticker.lower()
         df = pd.DataFrame(rows)
         dates=df['Date'].to_list()
         df=df['Close']
-        df=df*int(portfolio_dict[ticker])
-        prices=prices+df.tolist()
+        df=df*int(portfolio_dict.get(ticker,portfolio_dict.get(ticker.upper(),1)))
+        prices = [round(a + b, 2) for a, b in zip(prices, df.tolist())] if not prices == [] else df.tolist()
 
     fig = go.Figure(data=[
-            go.Scatter(x=dates, y=prices, mode='lines+markers', name="Evolution du portefeuille")
+            go.Scatter(x=dates, y=prices, mode='lines', name="Evolution du portefeuille")
         ])
     fig.update_layout(
         title=f"Évolution du portefeuille",
@@ -89,11 +94,11 @@ def create_portfolio_output(data,portfolio_id,user_data):
         except requests.exceptions.RequestException:
             pass
     last_amount=round(last_amount,2)
-    evolution= (last_amount - initial_amount) / initial_amount * 100 if initial_amount !=0 else 0
-    evolution_layout=html.P(f"Évolution : {round(evolution,1):.2f} %", style={'color': 'green' if evolution >=0 else 'red'})
+    evolution= (last_amount + cash - initial_amount) / initial_amount * 100 if initial_amount !=0 else 0
+    evolution_layout=html.P(f"Évolution du portefeuille depuis sa création: {round(evolution,1):.2f} %", style={'color': 'green' if evolution >=0 else 'red'})
     trades_layout=create_trades(user_data,portfolio_id)
     res=html.Div([html.Div([
-                    html.H3(f"Détails du portefeuille {portfolio_id}"),
+                    html.H3(f"Détails du portefeuille {data.get('portfolio_name', '')}"),
                     html.Button(
                         "supprimer le portefeuille",
                         id="delete-portfolio-btn",
@@ -102,17 +107,119 @@ def create_portfolio_output(data,portfolio_id,user_data):
                         style={"float": "right", "color": "red"}
                     )
                 ]),
-            html.P(f"Montant initial : {initial_amount} €"),
-            html.P(f"Montant actuel : {last_amount} €"),
+            html.P(f"Montant initial investi : {initial_amount} €"),
+            html.P(f"Montant actuel (cash inclus) : {last_amount} €"),
+            html.P(f"Montant en cash dans le portefeuille: {data.get('cash_balance', 'Donnée indisponible')} €"),
             evolution_layout,
-            html.H4("Positions :"),
+            html.H4("Positions actuelles dans le portefeuille :"),
             html.Ul([html.Li(f"{ticker} : {size} actions") for ticker, size in portfolio_dict.items()]),
-            dcc.Graph(figure=fig),
-            html.H4("Trades associés :"),
+            dcc.Dropdown(
+            id="period-selector",
+            options=[
+                {"label": "1j (A ne pas utiliser le weekend)", "value": "1d"},
+                {"label": "1s", "value": "1wk"},
+                {"label": "1m", "value": "1mo"},
+                {"label": "3m", "value": "3mo"},
+                {"label": "6m", "value": "6mo"},
+                {"label": "1an", "value": "1y"},
+                {"label": "Tout", "value": "max"}
+            ],value="1wk",clearable=False,style={"width": "100%"}),
+            dcc.Graph(figure=fig,id="portfolio-graph"),
+            html.H4("Trades associés au portefeuille :"),
             trades_layout
     ])
     return res
+@callback(
+    Output("portfolio-graph", "figure"),
+    Input("period-selector", "value"),
+    State("portfolio-data", "data"),
+    State("user-data", "data"),
+    prevent_initial_call=True
+)
+def update_portfolio_graph(period, portfolio_id, user_data):
+    try:
+        api_url = f"http://api:5001/portfolios/{portfolio_id}"  # ton endpoint
+        token = user_data["access_token"]
+        token_type = user_data.get("token_type", "bearer")
+        headers = {
+            "Authorization": f"{token_type.capitalize()} {token}"
+        }
+        try:
+            response = requests.get(api_url,headers=headers, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+            else:
+                return no_update
+        except requests.exceptions.RequestException:
+            return no_update
 
+        # Construction du tableau HTML
+        if not data:
+            return no_update
+        data=data[0]
+        API_URL="http://api:5001/tickers"
+        tickers = data.get("positions", "").upper()
+        tickers_list = tickers.split(",")
+        positions_size = data.get("positions_size","").split(",")
+        portfolio_dict=dict(zip(tickers_list, positions_size))
+
+        today = datetime.today()
+        label = period
+        start_date = None
+        interval = "1d"
+        if label == "1d":
+            # minimum interval = 1m
+            start_date = today - relativedelta(days=1)
+            interval = "1m"
+        elif label == "1wk":
+            # minimum interval = 5m
+            start_date = today - relativedelta(weeks=1)
+            interval = "1d"
+        elif label == "1mo":
+            # minimum interval = 15m
+            start_date = today - relativedelta(months=1)
+            interval = "1d"
+        elif label == "3mo":
+            # minimum interval = 30m
+            start_date = today - relativedelta(months=3)
+            interval = "1d"
+        elif label == "6mo":
+            # minimum interval = 1h
+            start_date = today - relativedelta(months=6)
+            interval = "1d"
+        elif label == "1y":
+            # minimum interval = 1d
+            start_date = data.get("portfolio_date", today - relativedelta(years=1))
+            interval = "1d"
+        elif label == "max":
+            # minimum interval = 1d
+            start_date = today - relativedelta(years=10)
+            interval = "1d"
+        response=requests.get(f"{API_URL}/{tickers.strip().upper()}/?interval={interval}&start={start_date.strftime('%Y-%m-%d')}")
+        response=response.json()
+        dates=[line['Date'] for line in response[next(iter(response))]]
+        prices=[]
+        for ticker, rows in response.items():
+            df = pd.DataFrame(rows)
+            dates=df['Date'].to_list()
+            df=df['Close']
+            df=df*int(portfolio_dict[ticker])
+            prices=prices+df.tolist()
+
+        fig = go.Figure(data=[
+                go.Scatter(x=dates, y=prices, mode='lines', name="Evolution du portefeuille")
+            ])
+        fig.update_layout(
+            title=f"Évolution du portefeuille",
+            xaxis_title="Date",
+            yaxis_title="Prix (€)",
+            paper_bgcolor='#303030',
+            plot_bgcolor='#303030',
+            font=dict(color='white')
+        )
+        return fig
+    except:
+        return no_update
 @callback(
     Output("portfolio-list-container", "children"),
     Input("url", "pathname"),          # déclenché quand tu arrives sur /portfolio
@@ -123,7 +230,7 @@ def load_portfolios(pathname, user_data):
         return no_update
 
     if not user_data or "access_token" not in user_data:
-        return "Vous devez être connecté pour voir vos portefeuilles."
+        return "Vous devez être connecté pour voir vos portefeuilles.\n Connectez-vous via le menu en haut."
 
     token = user_data["access_token"]
     token_type = user_data.get("token_type", "bearer")
@@ -143,12 +250,13 @@ def load_portfolios(pathname, user_data):
             dbc.Nav(
                     [html.Button("+Créer un nouveau portefeuille", id="create-portfolio-btn", n_clicks=0, className="btn btn-primary mb-3 w-100")]+
                     [
-                        html.Button(
-                            "Portfolio " + str(portfolios[i]['portfolio_id']),
+                        html.Div([html.Button(
+                            str(portfolios[i]['portfolio_name']),
                             id={"type": "portfolio-btn", "index": portfolios[i]['portfolio_id']},
                             n_clicks=0,
-                            className="btn btn-link text-start w-100"
-                        )
+                            className="btn btn-link w-100 text-center",
+                            style={"width": "100%", "display": "block"}
+                        )])
                         for i in range(len(portfolios))
                     ],
                     vertical=True
@@ -171,12 +279,12 @@ def load_portfolios(pathname, user_data):
     Input({"type": "portfolio-btn", "index": ALL}, "n_clicks_timestamp"),
     State({"type": "portfolio-btn", "index": ALL}, "id"),
     State("user-data", "data"),
-    prevent_initial_call=True
+    prevent_initial_call='initial_duplicate'
 )
 def show_portfolio_by_ts(n_clicks_ts_list, portfolio_ids,user_data):
     # aucun clic (toutes valeurs None)
     if not n_clicks_ts_list or all(v is None for v in n_clicks_ts_list):
-        return [html.Div("Sélectionnez un portefeuille dans la barre de gauche."),no_update]
+        return [no_update,no_update]
 
     # remplacer None par 0 (plus petit timestamp)
     safe_ts = [0 if v is None else v for v in n_clicks_ts_list]
@@ -228,8 +336,16 @@ def show_portfolio_creator(timestamp, user_data):
     return html.Div(
         id="portfolio-creator-form",
         children=[
-            html.Label("Montant initial"),
+            html.H2("Créer un nouveau portefeuille"),
+            html.Hr(),
+            html.Label("Nom du portefeuille"),
+            dcc.Input(id="portfolio-name", type="text"),
+            html.Hr(),
+            html.Label("Montant initial investi"),
             dcc.Input(id="initial-amount", type="number", min=0),
+            html.Hr(),
+            html.Label("Montant en cash dans le portefeuille (optionnel)"),
+            dcc.Input(id="cash-balance", type="number", min=0, value=0),
 
             html.Hr(),
 
@@ -264,33 +380,39 @@ def add_position_row(n_clicks, current_children):
     return current_children + [new_row]
 
 @callback(
-    Output("portfolio-output", "children",allow_duplicate=True),
+    Output("portfolio-creator-form", "children",allow_duplicate=True),
     Input("submit-portfolio-btn", "n_clicks"),
     State("initial-amount", "value"),
     State({"type": "ticker", "index": ALL}, "value"),
     State({"type": "size", "index": ALL}, "value"),
+    State("cash-balance", "value"),
+    State("portfolio-name", "value"),
     State("user-data", "data"),
     prevent_initial_call=True
 )
-def submit_portfolio(n_clicks, initial_amount, tickers, sizes, user_data):
+def submit_portfolio(n_clicks, initial_amount, tickers, sizes, cash_balance, portfolio_name, user_data):
     if not n_clicks:
         return no_update
 
-    if not any(tickers) or not any(sizes) or initial_amount is None or initial_amount <= 0:
+    if not any(tickers) or not any(sizes) or initial_amount is None or initial_amount <= 0 or not portfolio_name:
         return "Veuillez remplir tous les champs"
+
+    if not cash_balance or cash_balance < 0:
+        cash_balance = 0
 
     for ticker in tickers:
         if not ticker_exists(ticker):
-            return f"Le ticker '{ticker}' n'existe pas. Veuillez vérifier et réessayer."
+            return f"Le ticker '{ticker}' n'existe pas. Veuillez vérifier et réessayer.\n Il faut insérer le ticker de l'action et non le nom de l'entreprise."
     positions = json.dumps(tickers).replace('"', '').replace('[', '').replace(']', '')
     positions_size = json.dumps(sizes).replace('"', '').replace('[', '').replace(']', '')
 
     payload = {
         "last_amount": initial_amount,
         "initial_amount": initial_amount,
-        "positions": positions,
+        "positions": positions.upper(),
         "positions_size": positions_size,
-        "user_id": 0
+        "portfolio_name": portfolio_name,
+        "cash_balance": cash_balance if cash_balance > 0 else 0
     }
 
     # appel API

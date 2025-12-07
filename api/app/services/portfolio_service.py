@@ -11,6 +11,8 @@ def create_portfolio(db: Session, portfolio: PortfolioCreate, current_user: User
         initial_amount=portfolio.initial_amount,
         positions=portfolio.positions,
         positions_size=portfolio.positions_size,
+        portfolio_name=portfolio.portfolio_name,
+        cash_balance=portfolio.cash_balance
     )
     db.add(db_portfolio)
     db.commit()
@@ -35,6 +37,8 @@ def update_portfolio(db: Session, portfolio_id: int, portfolio_update: Portfolio
     portfolio.initial_amount = portfolio_update.initial_amount if portfolio_update.initial_amount is not None else portfolio.initial_amount
     portfolio.positions = portfolio_update.positions if portfolio_update.positions is not None else portfolio.positions
     portfolio.positions_size = portfolio_update.positions_size if portfolio_update.positions_size is not None else portfolio.positions_size
+    portfolio.portfolio_name = portfolio_update.portfolio_name if portfolio_update.portfolio_name is not None else portfolio.portfolio_name
+    portfolio.cash_balance = portfolio_update.cash_balance if portfolio_update.cash_balance is not None else portfolio.cash_balance
     db.commit()
     db.refresh(portfolio)
     return portfolio

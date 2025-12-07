@@ -7,7 +7,7 @@ from database import get_db
 from services.portfolio_service import (
     create_portfolio, get_portfolios_by_user, update_portfolio, delete_portfolio
 )
-from serializers.portfolio_serializer import PortfolioCreate, PortfolioRead, PortfolioUpdate
+from serializers.portfolio_serializer import PortfolioCreate, PortfolioRead, PortfolioUpdate, PortfolioBase
 
 portfolio_router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
@@ -20,7 +20,7 @@ def create_portfolio_endpoint(
 ):
     return create_portfolio(db, portfolio, current_user)
 
-@portfolio_router.get("/", response_model=list[PortfolioRead])
+@portfolio_router.get("/", response_model=list[PortfolioBase])
 def get_my_portfolios(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)

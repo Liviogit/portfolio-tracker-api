@@ -8,6 +8,7 @@ from pages.register import create_register_page
 # Initialisation de l’application
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 
+
 # --- Layout principal ---
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),

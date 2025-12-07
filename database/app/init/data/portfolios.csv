@@ -1,11 +1,11 @@
-portfolio_id,user_id,last_amount,initial_amount,positions,positions_size,portfolio_name,portfolio_date
-0,0,12000,10000,"AAPL,GOOGL,TSLA","50,30,20","Portefeuille Tech","2025-09-05"
-1,0,8000,5000,"MSFT,AMZN","60,40","Portefeuille Croissance","2025-08-18"
-2,1,15000,12000,"TSLA,NVDA","70,30","Portefeuille Risqué","2025-08-25"
-3,1,9000,7000,"AAPL,FB","50,50","Portefeuille US","2025-09-12"
-4,2,5000,5000,"GOOGL","100","Portefeuille Stable","2025-08-30"
-5,2,11000,10000,"NFLX,DIS","40,60","Portefeuille Diversifié","2025-09-08"
-6,3,7000,6000,"AAPL,TSLA","30,70","Portefeuille Tech","2025-09-20"
-7,3,4000,3000,"MSFT","100","Portefeuille US","2025-08-15"
-8,4,20000,15000,"AMZN,NVDA,GOOGL","40,30,30","Portefeuille International","2025-09-01"
-9,0,6000,6000,"TSLA","100","Portefeuille Risqué","2025-08-22"
+portfolio_id,user_id,last_amount,initial_amount,positions,positions_size,portfolio_name,portfolio_date,cash_balance
+0,0,12000,10000,"AAPL,GOOGL,TSLA","50,30,20","Portefeuille Tech","2025-09-05",2000
+1,0,8000,5000,"MSFT,AMZN","60,40","Portefeuille Croissance","2025-08-18",3000
+2,1,15000,12000,"TSLA,NVDA","70,30","Portefeuille Risqué","2025-08-25",3000
+3,1,9000,7000,"AAPL,FB","50,50","Portefeuille US","2025-09-12",2000
+4,2,5000,5000,"GOOGL","100","Portefeuille Stable","2025-08-30",0
+5,2,11000,10000,"NFLX,DIS","40,60","Portefeuille Diversifié","2025-09-08",1000
+6,3,7000,6000,"AAPL,TSLA","30,70","Portefeuille Tech","2025-09-20",1000
+7,3,4000,3000,"MSFT","100","Portefeuille US","2025-08-15",1000
+8,4,20000,15000,"AMZN,NVDA,GOOGL","40,30,30","Portefeuille International","2025-09-01",5000
+9,0,6000,6000,"TSLA","100","Portefeuille Risqué","2025-08-22",0

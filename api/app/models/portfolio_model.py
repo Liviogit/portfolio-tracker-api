@@ -16,6 +16,8 @@ class Portfolio(BaseSQL):
     positions_size = Column(String)     # ex: "50,30,20"
     portfolio_name = Column(String)     # ex: "Tech Stocks"
     portfolio_date = Column(DateTime, default=datetime.utcnow)    # ex: "2024-06-15 10:30:00"
-
+    cash_balance = Column(Float, nullable=False, default=0)
+    
     user = relationship("User", back_populates="portfolios")
     trades = relationship("Trade", back_populates="portfolio",cascade="all, delete-orphan")
+

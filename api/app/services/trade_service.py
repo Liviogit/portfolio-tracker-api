@@ -14,6 +14,7 @@ def create_trade(db: Session, trade: TradeCreate):
         price=trade.price,
         quantity=trade.quantity,
         trade_date=trade.trade_date,
+        description=trade.description
     )
     db.add(db_trade)
     db.commit()
