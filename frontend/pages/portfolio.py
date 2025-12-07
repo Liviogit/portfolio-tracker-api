@@ -95,7 +95,8 @@ def create_portfolio_output(data,portfolio_id,user_data):
             pass
     last_amount=round(last_amount,2)
     evolution= (last_amount + cash - initial_amount) / initial_amount * 100 if initial_amount !=0 else 0
-    evolution_layout=html.P(f"Évolution du portefeuille depuis sa création: {round(evolution,1):.2f} %", style={'color': 'green' if evolution >=0 else 'red'})
+    sign="+" if evolution >=0 else ""
+    evolution_layout=html.P(f"Évolution du portefeuille depuis sa création: {sign}{round(evolution,1):.2f} %", style={'color': 'green' if evolution >=0 else 'red'})
     trades_layout=create_trades(user_data,portfolio_id)
     res=html.Div([html.Div([
                     html.H3(f"Détails du portefeuille {data.get('portfolio_name', '')}"),
